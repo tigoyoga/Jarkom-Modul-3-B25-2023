@@ -621,7 +621,7 @@ setelah itu melakukan pengecekan pada laravel worker. bisa di pakai salah satu w
 ```
 mariadb --host=10.21.2.1 --port=3306 --user=kelompokb25 --password=passwordb25 dbkelompokb25 -e "SHOW DATABASES;"
 
-``
+```
 ![frieren 13 2](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/01cbe59d-9fd8-466c-9c01-0232c8311461)
 ### Nomer-14
 ### Frieren, Flamme, dan Fern memiliki Riegel Channel sesuai dengan quest guide berikut. Jangan lupa melakukan instalasi PHP8.0 dan Composer
@@ -778,7 +778,6 @@ lynx 10.21.4.1:8001
 
 
 ### Riegel Channel memiliki beberapa endpoint yang harus ditesting sebanyak 100 request dengan 10 request/second. Tambahkan response dan hasil testing pada grimoire.
-
 ### Nomer-15
 ### POST /auth/register 
 - Untuk menyelesaikan soal ini, kita perlu melakukan testing pada salah satu worker saja di sini  saya pakai **Frieren** . sebelum testing kita membuat file **register.json** pada root client yang ingin kita melakukan pengetestan , dengan isi file sebagai berikut
