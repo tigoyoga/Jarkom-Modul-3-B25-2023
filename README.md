@@ -790,7 +790,7 @@ lynx 10.21.4.1:8001
 ```
 - lalu melakukan testing dengan perintah di bawah ini 
 ```
-ab -n 100 -c 10 -p register.json -T application/json http://10.21.4.1:8001/api/auth
+ab -n 100 -c 10 -p register.json -T application/json http://10.21.4.1:8001/api/auth/register
 ```
 ### Hasil
 ![15 1](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/ad6e1ddc-5f17-4f8b-99be-60db941cc959)
@@ -798,3 +798,43 @@ ab -n 100 -c 10 -p register.json -T application/json http://10.21.4.1:8001/api/a
 ```
 NOTE : hanya berhasil 1 proses karena username dan password tersebut hanya di terima unique atau tidak bisa ganda dan sama.
 ```
+### Nomer-16
+### POST /auth/login
+- Untuk menyelesaikan soal ini, kita perlu melakukan testing pada salah satu worker saja di sini  saya pakai **Frieren** . sebelum testing kita membuat file **login.json** pada root client yang ingin kita melakukan pengetestan , dengan isi file sebagai berikut
+```
+{
+  "username": "kelompokB25",
+  "password": "passwordB25"
+}
+```
+- kemudian jalankan command berikut
+```
+ab -n 100 -c 10 -p login.json -T application/json http://10.21.4.1:8001/api/auth/login
+
+```
+### Hasil
+![16](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/eaf0d08d-0243-4fc4-b55a-b82d71786ca2)
+
+
+### Nomer-17
+### GET /me
+
+- untuk menyelesaikan soal ini, kita harus mendapatkan token yang di ambil,berikut ini perintah nya :
+```
+curl -X POST -H "Content-Type: application/json" -d '{"username": "kelompokb25", "password": "ajkb25"}' http://10.21.4.1:8001/api/auth/login | jq -r '.token' > token.txt
+```
+![17 1](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/6d7796f9-e0aa-4aec-8b36-31f4ca8e9798)
+
+
+- lalu jalankan berikut untuk me set token secara global
+```
+token=$(cat token.txt);
+```
+- setelah lakukan testing 
+```
+ab -n 100 -c 10 -H "Authorization: Bearer $token" http://10.21.4.1:8001/api/me
+
+```
+### Hasil
+![17 2](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/a64a0948-af30-4361-9493-7cca626d2832)
+
