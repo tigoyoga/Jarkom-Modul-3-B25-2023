@@ -137,6 +137,314 @@ auto eth0
 iface eth0 inet dhcp
 ```
 
+### Nomer 0
+Setelah mengalahkan Demon King, perjalanan berlanjut. Kali ini, kalian diminta untuk melakukan register domain berupa riegel.canyon.yyy.com untuk worker Laravel dan granz.channel.yyy.com untuk worker PHP (0) mengarah pada worker yang memiliki IP [prefix IP].x.1.
+
+#### Solusi
+- Tambahkan script berikut pada Helter (DNS Server)
+```
+echo '
+zone "riegel.canyon.B25.com" {
+        type master;
+        file "/etc/bind/jarkom/riegel.canyon.B25.com";
+};
+zone "granz.channel.B25.com" {
+        type master;
+        file "/etc/bind/jarkom/granz.channel.B25.com";
+};
+' >/etc/bind/named.conf.local
+
+mkdir -p /etc/bind/jarkom
+
+echo '
+;
+; BIND data file for local loopback interface
+;
+$TTL    604800
+@       IN      SOA     riegel.canyon.B25.com. root.riegel.canyon.B25.com. (
+                     2023111301         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      riegel.canyon.B25.com.
+@       IN      A       10.21.3.1
+' >/etc/bind/jarkom/riegel.canyon.B25.com
+
+echo '
+;
+; BIND data file for local loopback interface
+;
+$TTL    604800
+@       IN      SOA     granz.channel.B25.com. root.granz.channel.B25.com. (
+                     2023111302         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      granz.channel.B25.com.
+@       IN      A       10.21.4.1
+' >/etc/bind/jarkom/granz.channel.B25.com
+
+service bind9 restart
+```
+
+#### Hasil
+![image](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/88433109/748419d0-57fc-4e9f-b43e-1131b568e557)
+
+### Nomer 1
+Lakukan Konfigurasi sesuai dengan peta yang sudah diberikan.
+
+#### Solusi
+- Konfigurasi yang dimaksud adalah membuat topologi sesuai soal dengan network configuration yang sudah di set di soal sebelumnya. Setelah itu kita bisa membuat file script.sh di root yang dijalankan di `.bashrc' yang berisi :
+
+Helter (DNS Server)
+```
+echo nameserver 192.168.122.1 > /etc/resolv.conf
+apt-get update
+apt-get install bind9 -y
+```
+
+Himmel (DHCP Server)
+```
+echo nameserver 192.168.122.1 > /etc/resolv.conf
+apt-get update
+apt-get install isc-dhcp-server -y
+dhcpd --version
+```
+
+Aura (DHCP Relay)
+```
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE -s 10.21.0.0/16
+apt-get update
+apt-get install isc-dhcp-relay -y
+service isc-dhcp-relay start
+```
+
+Denken (Database Server)
+```
+echo nameserver 192.168.122.1 > /etc/resolv.conf
+apt-get update
+apt-get install mariadb-server -y
+service mysql start
+```
+
+Elsen (Load Balancer)
+```
+echo nameserver 192.168.122.1 > /etc/resolv.conf
+apt-get update && apt-get install nginx php php-fpm -y
+apt-get install bind9 -y
+apt-get install apache2-utils -y
+service nginx start
+```
+
+PHP Worker
+```
+echo nameserver 192.168.122.1 > /etc/resolv.conf
+apt-get update 
+apt install nginx php php-fpm -y
+apt-get install wget -y
+apt-get install unzip -y
+service php7.3-fpm start
+php -v
+service nginx start
+```
+
+Laravel Worker
+```
+echo nameserver 192.168.122.1 > /etc/resolv.conf
+apt-get update
+apt-get install mariadb-client -y
+#mariadb --host=10.21.2.1 --port=3306 --user=kelompokb25 --password=passwordb25
+apt-get install ntp
+service ntp restart
+curl --insecure -O https://example.com/gpg-key.gpg
+
+apt-get install -y lsb-release ca-certificates apt-transport-https software-pro$
+curl -sSLo /usr/share/keyrings/deb.sury.org-php.gpg https://packages.sury.org/p$
+sh -c 'echo "deb [signed-by=/usr/share/keyrings/deb.sury.org-php.gpg] https://p$
+apt-get update
+apt-get install php8.0-mbstring php8.0-xml php8.0-cli php8.0-common php8.0-intl$
+apt-get install nginx -y
+apt-get install htop -y
+
+service php8.0-fpm start
+service nginx start
+```
+
+Client
+```
+apt-get update
+apt-get install lynx -y
+apt-get install apache2-utils
+
+echo '
+search example.org
+nameserver 10.21.1.2
+nameserver 192.168.122.1
+' > /etc/resolv.conf
+```
+
+### Nomer 2 - 5
+- Client yang melalui Switch3 mendapatkan range IP dari [prefix IP].3.16 - [prefix IP].3.32 dan [prefix IP].3.64 - [prefix IP].3.80
+- Client yang melalui Switch4 mendapatkan range IP dari [prefix IP].4.12 - [prefix IP].4.20 dan [prefix IP].4.160 - [prefix IP].4.168
+- Client mendapatkan DNS dari Heiter dan dapat terhubung dengan internet melalui DNS tersebut
+- Lama waktu DHCP server meminjamkan alamat IP kepada Client yang melalui Switch3 selama 3 menit sedangkan pada client yang melalui Switch4 selama 12 menit. Dengan waktu maksimal dialokasikan untuk peminjaman alamat IP selama 96 menit
+
+#### Solusi
+- Tambahkan script pada Himmel :
+```
+echo '
+INTERFACESV4="eth0"
+INTERFACESV6=""
+' >/etc/default/isc-dhcp-server
+
+echo '
+option domain-name "example.org";
+option domain-name-servers ns1.example.org, ns2.example.org;
+
+default-lease-time 600;
+max-lease-time 7200;
+
+ddns-update-style none;
+
+subnet 10.21.1.0 netmask 255.255.255.0 {
+   
+}
+subnet 10.21.2.0 netmask 255.255.255.0 {
+   
+}
+
+subnet 10.21.3.0 netmask 255.255.255.0 {
+    range 10.21.3.16 10.21.3.32;
+    range 10.21.3.64 10.21.3.80;
+    option routers 10.21.3.0;
+    option broadcast-address 10.21.3.255;
+    option domain-name-servers 10.21.1.2;
+    default-lease-time 180;
+    max-lease-time 5760;
+}
+
+subnet 10.21.4.0 netmask 255.255.255.0 {
+    range 10.21.4.12 10.21.4.20;
+    range 10.21.4.160 10.21.4.168;
+    option routers 10.21.4.0;
+    option broadcast-address 10.21.4.255;
+    option domain-name-servers 10.21.1.2;
+    default-lease-time 720;
+    max-lease-time 5760;
+}' > /etc/dhcp/dhcpd.conf
+```
+- `subnet 10.21.3.0` adalah jaringan yang melalui Switch 3
+- `subnet 10.21.4.0` adalah jaringan yang melalui Switch 4
+- `range` digunakan untuk mengatur range IP yang kita bagikan ke client
+- `option routers` adalah IP gateway dari router menuju client (melewati switch)
+- `option broadcast-address` adalah IP broadcast pada subnet
+- `option domain-name-servers` adalah DNS yang ingin kita bagikan pada client
+- `default-lease-time` adalah waktu DHCP meminjamkan IP Address pada client. Pada subnet 3 kita set 3 menit (180 s) dan pada subnet 4 kita set 12 menit (720 s)
+- `max-lease-time` addalah waktu maksimal yang dialokasikan untuk peminjaman IP Address. Pada kedua subnet kita set 96 menit (5760 s)
+
+- Tambahkan script pada Aura :
+```
+echo '
+SERVERS="10.21.1.1"
+INTERFACES="eth1 eth2 eth3 eth4"
+OPTIONS=""
+' > /etc/default/isc-dhcp-relay
+
+echo '
+net.ipv4.ip_forward=1
+' > /etc/sysctl.conf
+
+service isc-dhcp-relay restart
+```
+
+# Nomer 6
+Pada masing-masing worker PHP, lakukan konfigurasi virtual host untuk website berikut dengan menggunakan php 7.3
+
+#### Solusi 
+- Lakukan konfigurasi pada setiap worker. Karena scriptnya sama, konfigurasi yang ditampilkan hanya konfigurasi pada worker Lawine saja :
+```
+mkdir /var/www/jarkom
+cp -v -r /root/modul-3/* /var/www/jarkom/
+touch /etc/nginx/sites-available/jarkom
+
+echo '
+server {
+
+        listen 80;
+
+        root /var/www/jarkom;
+
+        index index.php index.html index.htm;
+        server_name 10.21.3.1;
+
+        location / {
+                        try_files $uri $uri/ /index.php?$query_string;
+        }
+
+        # pass PHP scripts to FastCGI server
+        location ~ \.php$ {
+            include snippets/fastcgi-php.conf;
+            fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
+    }
+
+    location ~ /\.ht {
+                        deny all;
+        }
+
+        error_log /var/log/nginx/jarkom_error.log;
+        access_log /var/log/nginx/jarkom_access.log;
+}' > /etc/nginx/sites-available/jarkom
+
+ln -s /etc/nginx/sites-available/jarkom /etc/nginx/sites-enabled
+rm -rf /etc/nginx/sites-enabled/default
+```
+
+### Nomer 7
+Kepala suku dari Bredt Region memberikan resource server sebagai berikut:
+   a. Lawine, 4GB, 2vCPU, dan 80 GB SSD.
+   b. Linie, 2GB, 2vCPU, dan 50 GB SSD.
+   c. Lugner 1GB, 1vCPU, dan 25 GB SSD.
+aturlah agar Eisen dapat bekerja dengan maksimal, lalu lakukan testing dengan 1000 request dan 100 request/second.
+
+#### Solusi
+- Tambahkan script pada Eisen (Load Balancer) :
+```
+echo '
+# Default menggunakan Round Robin
+upstream myweb  {
+    server 10.21.3.1 weight=8; #IP Lawine
+    server 10.21.3.2 weight=4; #IP Linie
+    server 10.21.3.3 weight=1; #IP Lugnar
+}
+
+server {
+    listen 80;
+    server_name granz.channel.B25.com;
+
+    location / {
+    proxy_pass http://myweb;
+    }
+}' > /etc/nginx/sites-available/lb-jarkom-php
+
+ln -s /etc/nginx/sites-available/lb-jarkom-php /etc/nginx/sites-enabled
+```
+- Untuk weight kita set 8 : 4 : 1 berdasarkan spesifikasi pada soal
+- `ab -n 1000 -c 100 http://granz.channel.b25.com/` untuk testing
+
+### Nomer 8
+Karena diminta untuk menuliskan grimoire, buatlah analisis hasil testing dengan 200 request dan 10 request/second masing-masing algoritma Load Balancer dengan ketentuan sebagai berikut:
+    a. Nama Algoritma Load Balancer
+    b. Report hasil testing pada Apache Benchmark
+    c. Grafik request per second untuk masing masing algoritma. 
+    d. Analisis
+
+#### Solusi
+
+
 
 ### Nomer-11
 ### Lalu buat untuk setiap request yang mengandung /its akan di proxy passing menuju halaman https://www.its.ac.id. (11) hint: (proxy_pass)
