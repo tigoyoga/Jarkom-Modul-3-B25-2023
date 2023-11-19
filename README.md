@@ -623,4 +623,179 @@ mariadb --host=10.21.2.1 --port=3306 --user=kelompokb25 --password=passwordb25 d
 
 ``
 ![frieren 13 2](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/01cbe59d-9fd8-466c-9c01-0232c8311461)
+### Nomer-14
+### Frieren, Flamme, dan Fern memiliki Riegel Channel sesuai dengan quest guide berikut. Jangan lupa melakukan instalasi PHP8.0 dan Composer
 
+- Kami melakukan instalasi laravel dan melakukan deploy pada ketiga worker laravel sebagai berikut 
+```
+apt-get install -y lsb-release ca-certificates apt-transport-https software-properties-common gnupg2
+curl -sSLo /usr/share/keyrings/deb.sury.org-php.gpg https://packages.sury.org/php/apt.gpg
+sh -c 'echo "deb [signed-by=/usr/share/keyrings/deb.sury.org-php.gpg] https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list'
+apt-get update
+apt-get install php8.0-mbstring php8.0-xml php8.0-cli php8.0-common php8.0-intl php8.0-opcache php8.0-readline php8.0-mysql php8.0-fpm php8.0-curl unzip wget -y
+apt-get install nginx -y
+
+```
+- selanjutnya melakukan instalasi composer 
+```
+wget https://getcomposer.org/download/2.0.13/composer.phar
+chmod +x composer.phar
+mv composer.phar /usr/bin/composer
+```
+- kemudian melakukan instalasi git dan melakukan clone dari github laravel praktikum yang sudah disediakan
+```
+apt-get install git -y
+cd /var/www
+git clone https://github.com/martuafernando/laravel-praktikum-jarkom.git
+cd laravel-praktikum-jarkom
+composer update
+composer install
+```
+- setelah melakukan clone lakukan konfigurasi sebagai berikut pada masing-masing worker 
+```
+
+cp .env.example .env
+
+echo '
+APP_NAME=Laravel
+APP_ENV=local
+APP_KEY=base64:FMAdHCoIH+DQ7mcVuaRd31G8ZvitSNWM/MIsehhilE0=
+APP_DEBUG=true
+APP_URL=http://localhost
+
+LOG_CHANNEL=stack
+LOG_DEPRECATIONS_CHANNEL=null
+LOG_LEVEL=debug
+
+DB_CONNECTION=mysql
+DB_HOST=10.21.2.1
+DB_PORT=3306
+DB_DATABASE=dbkelompokb25
+DB_USERNAME=kelompokb25
+DB_PASSWORD=passwordb25
+
+BROADCAST_DRIVER=log
+CACHE_DRIVER=file
+FILESYSTEM_DISK=local
+QUEUE_CONNECTION=sync
+SESSION_DRIVER=file
+SESSION_LIFETIME=120
+
+MEMCACHED_HOST=127.0.0.1
+
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+
+MAIL_MAILER=smtp
+MAIL_HOST=mailpit
+MAIL_PORT=1025
+MAIL_USERNAME=null
+MAIL_PASSWORD=null
+MAIL_ENCRYPTION=null
+MAIL_FROM_ADDRESS="hello@example.com"
+MAIL_FROM_NAME="${APP_NAME}"
+
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=
+AWS_USE_PATH_STYLE_ENDPOINT=false
+
+PUSHER_APP_ID=
+PUSHER_APP_KEY=
+PUSHER_APP_SECRET=
+PUSHER_HOST=
+PUSHER_PORT=443
+PUSHER_SCHEME=https
+PUSHER_APP_CLUSTER=mt1
+
+VITE_PUSHER_APP_KEY="${PUSHER_APP_KEY}"
+VITE_PUSHER_HOST="${PUSHER_HOST}"
+VITE_PUSHER_PORT="${PUSHER_PORT}"
+VITE_PUSHER_SCHEME="${PUSHER_SCHEME}"
+VITE_PUSHER_APP_CLUSTER="${PUSHER_APP_CLUSTER}"' > /var/www/laravel-praktikum-jarkom/.env
+
+php artisan migrate:fresh
+php artisan db:seed --class=AiringsTableSeeder
+php artisan key:generate
+php artisan config:cache
+php artisan storage:link
+php artisan jwt:secret
+php artisan config:clear
+chown -R www-data.www-data /var/www/laravel-praktikum-jarkom/storage
+```
+- Setelah itu lakukan konfigurasi **nginx** pada masing masing worker sebagaimana berikut 
+```
+10.21.4.1:8001; # Frieren
+10.21.4.2:8002; # Flamme
+10.21.4.3:8003; # Fern
+
+```
+- Berikut ini script lengkap nya, contoh pada worker Frieren
+```
+touch /etc/nginx/sites-available/riegel.canyon.B25.com
+
+echo '
+server {
+
+    listen 8001;
+
+    root /var/www/laravel-praktikum-jarkom/public;
+
+    index index.php index.html index.htm;
+    server_name _;
+
+    location / {
+            try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # pass PHP scripts to FastCGI server
+    location ~ \.php$ {
+    include snippets/fastcgi-php.conf;
+    fastcgi_pass unix:/var/run/php/php8.0-fpm.sock;
+    }
+
+    location ~ /\.ht {
+            deny all;
+    }
+
+    error_log /var/log/nginx/implementasi_error.log;
+    access_log /var/log/nginx/implementasi_access.log;
+}' > /etc/nginx/sites-available/riegel.canyon.B25.com
+
+ln -s /etc/nginx/sites-available/riegel.canyon.B25.com /etc/nginx/sites-enabled/
+service php8.0-fpm start
+service nginx start
+```
+### Hasil 
+- Lakukan pada salah satu client dan arahkan salah satu worker seperti di arahkan ke Frieren
+```
+lynx 10.21.4.1:8001
+
+```
+![14 1](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/f1b56cf2-f5b6-463e-a763-a33828c9f6b5)
+
+
+### Riegel Channel memiliki beberapa endpoint yang harus ditesting sebanyak 100 request dengan 10 request/second. Tambahkan response dan hasil testing pada grimoire.
+
+### Nomer-15
+### POST /auth/register 
+- Untuk menyelesaikan soal ini, kita perlu melakukan testing pada salah satu worker saja di sini  saya pakai **Frieren** . sebelum testing kita membuat file **register.json** pada root client yang ingin kita melakukan pengetestan , dengan isi file sebagai berikut
+```
+{
+  "username": "kelompokB25",
+  "password": "passwordB25"
+}
+
+```
+- lalu melakukan testing dengan perintah di bawah ini 
+```
+ab -n 100 -c 10 -p register.json -T application/json http://10.21.4.1:8001/api/auth
+```
+### Hasil
+![15 1](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/ad6e1ddc-5f17-4f8b-99be-60db941cc959)
+
+```
+NOTE : hanya berhasil 1 proses karena username dan password tersebut hanya di terima unique atau tidak bisa ganda dan sama.
+```
