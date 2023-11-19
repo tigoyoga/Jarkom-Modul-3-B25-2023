@@ -361,7 +361,7 @@ net.ipv4.ip_forward=1
 service isc-dhcp-relay restart
 ```
 
-# Nomer 6
+### Nomer 6
 Pada masing-masing worker PHP, lakukan konfigurasi virtual host untuk website berikut dengan menggunakan php 7.3
 
 #### Solusi 
