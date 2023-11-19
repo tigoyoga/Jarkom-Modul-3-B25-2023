@@ -137,4 +137,182 @@ auto eth0
 iface eth0 inet dhcp
 ```
 
-  
+
+### Nomer-11
+### Lalu buat untuk setiap request yang mengandung /its akan di proxy passing menuju halaman https://www.its.ac.id. (11) hint: (proxy_pass)
+
+- lalu melakukan setting pada **/etc/nginx sites-available/lb-jarkom-php**
+```
+ location /its {
+            proxy_pass https://www.its.ac.id/;
+           
+        }
+```
+#### untuk full scriptnya 
+```
+echo '
+#Default menggunakan Round Robin
+upstream backend  {
+    server 10.21.3.1; #IP Lawine
+    server 10.21.3.2; #IP Linie
+    server 10.21.3.3; #IP Lugnar
+}
+
+server {
+
+listen 80;
+
+server_name granz.channel.B25.com;
+
+        location / {
+            #no 12
+            allow 10.21.3.69;
+            allow 10.21.s3.70;
+            allow 10.21.4.167;
+            allow 10.21.4.168;
+            deny all;
+            proxy_pass http://backend;
+            proxy_set_header    X-Real-IP $remote_addr;
+            proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header    Host $http_host;
+
+            auth_basic "Administrator'\''s Area";
+            auth_basic_user_file /etc/nginx/.htpasswd;
+        }
+        #no 11
+         location /its {
+            proxy_pass https://www.its.ac.id/;
+           
+        }
+
+        location ~ /\.ht {
+            deny all;
+        }
+
+error_log /var/log/nginx/lb_error.log;
+access_log /var/log/nginx/lb_access.log;
+
+}' > /etc/nginx/sites-available/lb-jarkom-php
+
+```
+- lalu kita melakukan testing dengan mengandung **/its**
+```
+lynx granz.channel.B25.com/its
+```
+#### Hasil
+![Screenshot 2023-11-19 203437](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/e2226455-8674-4c9d-b7a7-d0916ed1eb72)
+
+
+### Nomer-12
+### Selanjutnya LB ini hanya boleh diakses oleh client dengan IP [Prefix IP].3.69, [Prefix IP].3.70, [Prefix IP].4.167, dan [Prefix IP].4.168. (12) hint: (fixed in dulu clinetnya)
+
+- lalu melakukan setting pada **/etc/nginx sites-available/lb-jarkom-php**
+```
+ location / {
+            #no 12
+            allow 10.21.3.69;
+            allow 10.21.s3.70;
+            allow 10.21.4.167;
+            allow 10.21.4.168;
+            deny all;
+            proxy_pass http://backend;
+            proxy_set_header    X-Real-IP $remote_addr;
+            proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header    Host $http_host;
+
+            auth_basic "Administrator'\''s Area";
+            auth_basic_user_file /etc/nginx/.htpasswd;
+        }
+```
+Berikut ini untuk full scriptnya 
+```
+echo '
+#Default menggunakan Round Robin
+upstream backend  {
+    server 10.21.3.1; #IP Lawine
+    server 10.21.3.2; #IP Linie
+    server 10.21.3.3; #IP Lugnar
+}
+
+server {
+
+listen 80;
+
+server_name granz.channel.B25.com;
+
+        location / {
+            #no 12
+            allow 10.21.3.69;
+            allow 10.21.s3.70;
+            allow 10.21.4.167;
+            allow 10.21.4.168;
+            deny all;
+            proxy_pass http://backend;
+            proxy_set_header    X-Real-IP $remote_addr;
+            proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header    Host $http_host;
+
+            auth_basic "Administrator'\''s Area";
+            auth_basic_user_file /etc/nginx/.htpasswd;
+        }
+        #no 11
+         location /its {
+            proxy_pass https://www.its.ac.id/;
+           
+        }
+
+        location ~ /\.ht {
+            deny all;
+        }
+
+error_log /var/log/nginx/lb_error.log;
+access_log /var/log/nginx/lb_access.log;
+
+}' > /etc/nginx/sites-available/lb-jarkom-php
+
+```
+- disini kita melakukan pengkondisian dimana **IP** yang di izinkan mengakses hanya **ip** tertentu sesuai dengan keinginan soal. Untuk melakukan Testing bisa menggunakan **IP** yang tertera atau menambahkan **IP** yang client yang ingin kita gunakan untuk testing
+![2](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/280f2827-0b04-4b7e-b47a-c30c4099d9e5)
+![12 2](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/1b702264-3cc8-4010-ab4c-c8a79a2507d6)
+
+### Nomer-13
+### Semua data yang diperlukan, diatur pada Denken dan harus dapat diakses oleh Frieren, Flamme, dan Fern.
+- Pertama melakukan set up pada node **Denken** dimana sebagai **Database server** ,berikut ini scriptnya 
+```
+echo '
+[client-server]
+
+# Import all .cnf files from configuration directory
+!includedir /etc/mysql/conf.d/
+!includedir /etc/mysql/mariadb.conf.d/
+
+[mysqld]
+skip-networking=0
+skip-bind-address ' >/etc/mysql/my.cnf
+```
+
+- setelah itu jalan perintah berikut ini,dimana untuk membuat database yang akan di akses oleh client
+```
+mysql -u root -p
+
+CREATE USER 'kelompokb25'@'%' IDENTIFIED BY
+'passwordb25';
+CREATE USER 'kelompokb25'@'localhost' IDENTIFIED
+BY 'passwordb25';
+CREATE DATABASE dbkelompokb25;
+GRANT ALL PRIVILEGES ON *.* TO 'kelompokb25'@'%';
+GRANT ALL PRIVILEGES ON *.* TO
+'kelompokb25'@'localhost';
+FLUSH PRIVILEGES;
+
+```
+![13 1](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/262f8292-11ad-4905-8934-52be00393421)
+
+### Result 
+setelah itu melakukan pengecekan pada laravel worker. bisa di pakai salah satu worker aja (Frieren)
+```
+mariadb --host=10.21.2.1 --port=3306 --user=kelompokb25 --password=passwordb25 dbkelompokb25 -e "SHOW DATABASES;"
+
+``
+![frieren 13 2](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/01cbe59d-9fd8-466c-9c01-0232c8311461)
+
