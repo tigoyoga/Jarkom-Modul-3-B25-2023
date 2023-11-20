@@ -846,7 +846,7 @@ ab -n 100 -c 10 -H "Authorization: Bearer $token" http://10.21.4.1:8001/api/me
 ```
 nano /etc/nginx/sites-available/lb-jarkom-laravel
 ```
-berikut ini full dari script nya
+- berikut ini full dari script nya
 ```
 upstream laravel {
         server 10.21.4.1:8001; # Frieren
