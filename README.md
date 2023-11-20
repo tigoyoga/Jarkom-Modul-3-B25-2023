@@ -838,3 +838,165 @@ ab -n 100 -c 10 -H "Authorization: Bearer $token" http://10.21.4.1:8001/api/me
 ### Hasil
 ![17 2](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/a64a0948-af30-4361-9493-7cca626d2832)
 
+### Nomer-18
+### Untuk memastikan ketiganya bekerja sama secara adil untuk mengatur Riegel Channel maka implementasikan Proxy Bind pada Eisen untuk mengaitkan IP dari Frieren, Flamme, dan Fern.
+
+- Untuk memastikan semua berjalan secara adil,kita hanya menggunakan LB(Eisen) karena pada dasarnya LB sendiri membagi rata kerja dari 3 worker tersebut
+
+```
+nano /etc/nginx/sites-available/lb-jarkom-laravel
+```
+berikut ini full dari script nya
+```
+upstream laravel {
+        server 10.21.4.1:8001; # Frieren
+        server 10.21.4.2:8002; # Flamme
+        server 10.21.4.3:8003; # Fern
+}
+
+server {
+        listen 80;
+        server_name riegel.canyon.B25.com;
+
+        location / {
+                proxy_pass http://laravel;
+        }
+}
+```
+- Kemudian kita melakukan testing pada client dengan mengakses 3 worker 
+![18](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/cd93ff08-ce1a-4b3c-87d1-222f44bb4f75)
+### Frieren 
+![18 Frieren](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/c60a126e-e6cf-4e79-880a-3f17e21f62b2)
+### Flamme
+![18 flamme](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/d0f6fbe8-af83-49e4-81fc-7ba8a7b2f015)
+### Fern
+![18 fern](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/ebaadeea-1765-4f2f-aeae-d0040db6c2f6)
+
+
+### Nomer-19
+### Untuk meningkatkan performa dari Worker, coba implementasikan PHP-FPM pada Frieren, Flamme, dan Fern. Untuk testing kinerja naikkan
+### - pm.start_servers
+### - pm.min_spare_servers
+### - pm.max_spare_servers sebanyak tiga percobaan dan lakukan testing sebanyak 100 request dengan 10 request/second kemudian berikan hasil analisisnya pada Grimoire.
+
+- Pertama kita menset pada pool dengan 
+```
+nano /etc/php/7.3/fpm/pool.d/www.conf
+```
+- Kemudian isi dengan bagian berikut 
+```
+[www]
+user = www-data
+group = www-data
+listen = /run/php/php7.3-fpm.sock
+listen.owner = www-data
+listen.group = www-data
+php_admin_value[disable_functions] = exec,passthru,shell_exec,system
+php_admin_flag[allow_url_fopen] = off
+
+; Choose how the process manager will control the number of child processes.
+
+pm = dynamic
+pm.max_children = 5
+pm.start_servers = 2
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+```
+- lalu lakukan restart
+```
+service php7.3-fpm start
+service php7.3-fpm restart
+service nginx restart
+```
+### Hasil
+- Test0(nama sesuai dengan script.sh yang telah saya buat di root)
+```
+pm = dynamic
+pm.max_children = 5
+pm.start_servers = 2
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+```
+![19 1](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/e832dde2-06ec-4aac-8510-d265940ecf08)
+- Test 1
+```
+pm = dynamic
+pm.max_children = 25
+pm.start_servers = 5
+pm.min_spare_servers = 3
+pm.max_spare_servers = 10
+
+```
+![19 2](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/5afc1f4a-025c-4f7c-a88b-98df60406046)
+- Test2
+```
+pm = dynamic
+pm.max_children = 50
+pm.start_servers = 8
+pm.min_spare_servers = 5
+pm.max_spare_servers = 1
+
+```
+![19 3](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/6e800112-7bc0-45d3-845d-b0ad4ea7a41e)
+- Test 3
+```
+pm = dynamic
+pm.max_children = 75
+pm.start_servers = 10
+pm.min_spare_servers = 5
+pm.max_spare_servers = 20
+```
+![19 4](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/93cd3de4-9bf8-470a-9358-3d464eb28c6d)
+
+
+### Nomer-20
+### Nampaknya hanya menggunakan PHP-FPM tidak cukup untuk meningkatkan performa dari worker maka implementasikan Least-Conn pada Eisen. Untuk testing kinerja dari worker tersebut dilakukan sebanyak 100 request dengan 10 request/second. (20)
+
+- melakukan perubahan pada LB **(Eisen)** sebagai berikut 
+```
+nano /etc/nginx/sites-available/lb-jarkom-laravel
+```
+dan di tambahkan Algorirma ```Least_con```,berikut 
+```
+#Least Connection
+upstream backend  {
+least_conn;
+server 10.21.3.1; #IP Lawine
+server 10.21.3.2; #IP Linie
+server 10.21.3.3; #IP Lugnar
+}
+
+server {
+listen 80;
+server_name granz.channel.B25.com;
+
+        location / {
+                proxy_pass http://backend;
+                proxy_set_header    X-Real-IP $remote_addr;
+                proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header    Host $http_host;
+        }
+
+error_log /var/log/nginx/lb_error.log;
+access_log /var/log/nginx/lb_access.log;
+
+}
+
+```
+- dan lakukan restart 
+```
+service php7.3-fpm start
+service php7.3-fpm restart
+service nginx restart
+```
+### Hasilnya 
+![20](https://github.com/tigoyoga/Jarkom-Modul-3-B25-2023/assets/101172294/f17a333f-e79c-4559-a0d3-d28202a50d97)
+
+
+### Analisis 
+- di no 20 ini saya membandingkan dengan no 19 yaitu pada test3, dimana kami membandingkan melihat dari request oer second dari tanpa menggunakan algo LC (19) dan menggunakan algo LC (20).
+
+| No | Kategori| Request Per Seqond|
+| ------- | ------- | ------- |
+| 1 | Tanpa algo LC | 15.36|
+| 2| dengan algo LC | 15.62 |
